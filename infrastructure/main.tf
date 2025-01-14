@@ -30,7 +30,7 @@ resource "aws_lambda_function_url" "calendar" {
   authorization_type = "NONE"
   cors {
     allow_origins = ["http://localhost:3000"]
-    allow_methods = ["GET", "POST", "OPTIONS"]
+    allow_methods = ["GET", "POST"]
     allow_headers = ["*"]
   }
 }
