@@ -15,7 +15,29 @@ resource "aws_iam_role" "calendar" {
   })
 }
 
-resource "aws_iam_role_policy_attachment" "lambda_policy" {
+resource "aws_iam_role_policy" "calendar" {
+  name   = "calendar"
+  role   = aws_iam_role.calendar.id
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "ssm:GetParameter"
+        ],
+        Resource = "arn:aws:ssm:*:${data.aws_caller_identity.current.account_id}:parameter/calendar-google-credentials-json"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "calendar" {
   role       = aws_iam_role.calendar.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+resource "aws_iam_role_policy_attachment" "calendar_api_policy" {
+  role       = aws_iam_role.calendar.name
+  policy_arn = "arn:aws:iam::aws:policy/roles/calendar.admin"
 }
