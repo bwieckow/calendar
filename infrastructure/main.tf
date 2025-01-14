@@ -16,6 +16,8 @@ resource "aws_lambda_function" "calendar" {
 
   layers = [aws_lambda_layer_version.calendar_dependencies.arn]
 
+  timeout = 15
+
   environment {
     variables = {
       GOOGLE_CREDENTIALS_PARAM = "calendar-google-credentials-json"
