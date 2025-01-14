@@ -51,7 +51,6 @@ jobs:
     # Runs a `terraform plan` command using the runners shell
     - name: Run terraform plan
       run: |
-        ls -la ./infrastructure/google_lambda_layer
         cd ./infrastructure
         terraform version
         terraform init
