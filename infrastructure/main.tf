@@ -3,6 +3,11 @@ resource "aws_lambda_layer_version" "calendar_dependencies" {
   source_code_hash    = filebase64sha256("google_lambda_layer/google-layer.zip")
   layer_name          = "calendar_dependencies"
   compatible_runtimes = ["python3.13"]
+
+  lifecycle {
+    # Add for active deployment
+    ignore_changes = [ source_code_hash ]
+  }
 }
 
 resource "aws_lambda_function" "calendar" {
