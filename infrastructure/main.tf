@@ -28,6 +28,11 @@ resource "aws_lambda_function" "calendar" {
 resource "aws_lambda_function_url" "calendar" {
   function_name      = aws_lambda_function.calendar.function_name
   authorization_type = "NONE"
+  cors {
+    allow_origins = ["http://localhost:3000"]
+    allow_methods = ["GET", "POST", "OPTIONS"]
+    allow_headers = ["*"]
+  }
 }
 
 output "lambda_function_arn" {
