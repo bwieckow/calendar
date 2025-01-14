@@ -15,9 +15,8 @@ resource "aws_iam_role" "calendar" {
   })
 }
 
-resource "aws_iam_role_policy" "calendar" {
+resource "aws_iam_policy" "calendar" {
   name   = "calendar"
-  role   = aws_iam_role.calendar.id
   policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
@@ -39,5 +38,5 @@ resource "aws_iam_role_policy_attachment" "calendar" {
 
 resource "aws_iam_role_policy_attachment" "calendar_api_policy" {
   role       = aws_iam_role.calendar.name
-  policy_arn = aws_iam_role_policy.calendar.arn
+  policy_arn = aws_iam_policy.calendar.arn
 }
