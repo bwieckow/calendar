@@ -9,7 +9,7 @@ resource "aws_lambda_function" "calendar" {
 
   environment {
     variables = {
-      foo = "bar"
+      GOOGLE_CREDENTIALS_PARAM = "calendar-google-credentials-json"
     }
   }
 }
