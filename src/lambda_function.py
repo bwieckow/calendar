@@ -43,6 +43,16 @@ def get_events_for_date(service, start_of_day, end_of_day):
     print(f'Found {len(events)} events for the date')
     return events
 
+def format_event(event):
+    return {
+        'id': event.get('id'),
+        'summary': event.get('summary'),
+        'start': event['start'],
+        'end': event['end'],
+        'description': event.get('description'),
+        'number_of_attendees': len(event.get('attendees', []))
+    }
+
 def lambda_handler(event, context):
     google_credentials_json = get_google_credentials()
     write_credentials_to_file(google_credentials_json)
@@ -66,8 +76,8 @@ def lambda_handler(event, context):
     start_of_day, end_of_day = get_time_range_for_date(date)
     events = get_events_for_date(service, start_of_day, end_of_day)
     
-    # Return the three nearest upcoming events
-    nearest_events = events[:3]
+    # Return the three nearest upcoming events with specified fields
+    nearest_events = [format_event(event) for event in events[:3]]
     return {
         'statusCode': 200,
         'body': json.dumps(nearest_events)
