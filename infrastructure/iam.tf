@@ -39,5 +39,5 @@ resource "aws_iam_role_policy_attachment" "calendar" {
 
 resource "aws_iam_role_policy_attachment" "calendar_api_policy" {
   role       = aws_iam_role.calendar.name
-  policy_arn = aws_iam_role.calendar.arn
+  policy_arn = aws_iam_role_policy.calendar.arn
 }
