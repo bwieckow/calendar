@@ -8,6 +8,6 @@ data "archive_file" "lambda_zip" {
 
 data "archive_file" "google_labda_layer" {
   type        = "zip"
-  source_dir  = "../src/google_lambda_layer/python"
+  source_dir  = "google_lambda_layer"
   output_path = "google-layer.zip"
 }

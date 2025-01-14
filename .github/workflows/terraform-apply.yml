@@ -36,8 +36,8 @@ jobs:
 
     - name: Create google lambda layer
       run: |
-        cd ./src
-        pip install -r requirements.txt -t google_lambda_layer/python
+        cd ./infrastructure/google_lambda_layer
+        pip install -r requirements.txt
 
     # Runs a `terraform apply` command using the runners shell
     - name: Run terraform apply
