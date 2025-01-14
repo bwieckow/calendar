@@ -14,6 +14,11 @@ resource "aws_lambda_function" "python_lambda" {
   }
 }
 
+resource "aws_lambda_function_url" "test_latest" {
+  function_name      = aws_lambda_function.test.function_name
+  authorization_type = "NONE"
+}
+
 output "lambda_function_arn" {
   value = aws_lambda_function.python_lambda.arn
 }
