@@ -1,5 +1,5 @@
 resource "aws_lambda_layer_version" "calendar_dependencies" {
-  filename   = data.archive_file.google_labda_layer.output_path
+  filename   = data.archive_file.google_lambda_layer.output_path
   layer_name = "calendar_dependencies"
   compatible_runtimes = ["python3.13"]
 }
