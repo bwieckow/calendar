@@ -44,8 +44,8 @@ jobs:
         # Install the dependencies in the python directory
         pip install -r requirements.txt -t python
 
-        # # Zip the contents of the python directory
-        # zip -r google-layer.zip python
+        # Zip the contents of the python directory
+        zip -r google-layer.zip python
 
     # Runs a `terraform apply` command using the runners shell
     - name: Run terraform apply
