@@ -24,20 +24,14 @@ def get_calendar_service():
     service = build('calendar', 'v3', credentials=creds)
     return service
 
-def get_upcoming_thursday():
-    today = datetime.date.today()
-    days_ahead = 3 - today.weekday()  # 3 is Thursday
-    if days_ahead <= 0:
-        days_ahead += 7
-    next_thursday = today + datetime.timedelta(days_ahead)
-    return next_thursday
-
-def get_time_range_for_thursday(thursday):
-    start_of_day = datetime.datetime.combine(thursday, datetime.time.min).isoformat() + 'Z'
-    end_of_day = datetime.datetime.combine(thursday, datetime.time.max).isoformat() + 'Z'
+def get_time_range_for_date(date):
+    start_of_day = datetime.datetime.combine(date, datetime.time.min).isoformat() + 'Z'
+    end_date = date + datetime.timedelta(days=90)  # 3 months later
+    end_of_day = datetime.datetime.combine(end_date, datetime.time.max).isoformat() + 'Z'
     return start_of_day, end_of_day
 
-def get_events_for_thursday(service, start_of_day, end_of_day):
+def get_events_for_date(service, start_of_day, end_of_day):
+    print(f'Getting events for date from {start_of_day} to {end_of_day}')
     events_result = service.events().list(
         calendarId='primary',
         timeMin=start_of_day,
@@ -46,38 +40,35 @@ def get_events_for_thursday(service, start_of_day, end_of_day):
         orderBy='startTime'
     ).execute()
     events = events_result.get('items', [])
+    print(f'Found {len(events)} events for the date')
     return events
-
-def find_event_at_time(events, event_time):
-    for event in events:
-        start = event['start'].get('dateTime', event['start'].get('date'))
-        if start == event_time:
-            return event
-    return None
 
 def lambda_handler(event, context):
     google_credentials_json = get_google_credentials()
     write_credentials_to_file(google_credentials_json)
     service = get_calendar_service()
-    next_thursday = get_upcoming_thursday()
-    start_of_day, end_of_day = get_time_range_for_thursday(next_thursday)
-    events = get_events_for_thursday(service, start_of_day, end_of_day)
     
-    event_time = event.get('queryStringParameters', {}).get('event_time')
-    if event_time:
-        event_details = find_event_at_time(events, event_time)
-        if event_details:
-            return {
-                'statusCode': 200,
-                'body': json.dumps(event_details)
-            }
-        else:
-            return {
-                'statusCode': 404,
-                'body': 'Event not found'
-            }
-    else:
+    date_str = event.get('queryStringParameters', {}).get('date')
+    if not date_str:
         return {
             'statusCode': 400,
-            'body': 'event_time query parameter is required'
+            'body': 'date query parameter is required'
         }
+    
+    try:
+        date = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
+    except ValueError:
+        return {
+            'statusCode': 400,
+            'body': 'Invalid date format. Use YYYY-MM-DD.'
+        }
+    
+    start_of_day, end_of_day = get_time_range_for_date(date)
+    events = get_events_for_date(service, start_of_day, end_of_day)
+    
+    # Return the three nearest upcoming events
+    nearest_events = events[:3]
+    return {
+        'statusCode': 200,
+        'body': json.dumps(nearest_events)
+    }
