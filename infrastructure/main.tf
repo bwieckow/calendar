@@ -1,3 +1,9 @@
+resource "aws_lambda_layer_version" "calendar_dependencies" {
+  filename   = data.archive_file.google_labda_layer.output_path
+  layer_name = "calendar_dependencies"
+  compatible_runtimes = ["python3.13"]
+}
+
 resource "aws_lambda_function" "calendar" {
   function_name = "calendar"
   role          = aws_iam_role.calendar.arn
@@ -6,6 +12,8 @@ resource "aws_lambda_function" "calendar" {
 
   filename         = data.archive_file.lambda_zip.output_path
   source_code_hash = data.archive_file.lambda_zip.output_base64sha256
+
+  layers = [aws_lambda_layer_version.calendar_dependencies.arn]
 
   environment {
     variables = {

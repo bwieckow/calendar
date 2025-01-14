@@ -22,6 +22,9 @@ jobs:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v4
     - uses: hashicorp/setup-terraform@v3
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.13'
 
     # Set AWS credentials
     - name: Configure AWS credentials
@@ -30,6 +33,11 @@ jobs:
         aws-access-key-id: ${{ secrets.TERRAFORM_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.TERRAFORM_SECRET_ACCESS_KEY }}
         aws-region: eu-west-1
+
+    - name: Create google lambda layer
+      run: |
+        cd ./src
+        pip install -r requirements.txt -t google_lambda_layer/python
 
     # Runs a `terraform apply` command using the runners shell
     - name: Run terraform apply
