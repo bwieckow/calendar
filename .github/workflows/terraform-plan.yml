@@ -37,7 +37,6 @@ jobs:
 
     - name: Create google lambda layer
       run: |
-        ls -la
         cd ./src
         pip install -r requirements.txt -t google_lambda_layer/python
 
