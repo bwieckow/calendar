@@ -1,6 +1,6 @@
-resource "aws_lambda_function" "python_lambda" {
-  function_name = "my_python_lambda"
-  role          = aws_iam_role.lambda_role.arn
+resource "aws_lambda_function" "calendar" {
+  function_name = "calendar"
+  role          = aws_iam_role.calendar.arn
   handler       = "lambda_function.lambda_handler"
   runtime       = "python3.13" # Latest Python version supported by AWS Lambda
 
@@ -14,11 +14,11 @@ resource "aws_lambda_function" "python_lambda" {
   }
 }
 
-resource "aws_lambda_function_url" "test_latest" {
-  function_name      = aws_lambda_function.test.function_name
+resource "aws_lambda_function_url" "calendar" {
+  function_name      = aws_lambda_function.calendar.function_name
   authorization_type = "NONE"
 }
 
 output "lambda_function_arn" {
-  value = aws_lambda_function.python_lambda.arn
+  value = aws_lambda_function.calendar.arn
 }
