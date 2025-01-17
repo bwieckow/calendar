@@ -6,13 +6,20 @@ from googleapiclient.discovery import build
 from google.oauth2 import service_account
 import json
 
-def get_google_credentials():
+def get_ssm_parameter(name):
     ssm_client = boto3.client('ssm')
     parameter = ssm_client.get_parameter(
-        Name=os.environ['GOOGLE_CREDENTIALS_PARAM'],
+        Name=name,
         WithDecryption=True
     )
-    google_credentials_json = parameter['Parameter']['Value']
+    return parameter['Parameter']['Value']
+
+def get_google_credentials():
+    if os.getenv('LOCAL'):
+        with open(os.getenv('LOCAL_CREDENTIALS_PATH'), 'r') as f:
+            google_credentials_json = f.read()
+    else:
+        google_credentials_json = get_ssm_parameter(os.environ['GOOGLE_CREDENTIALS_PARAM'])
     return google_credentials_json
 
 def write_credentials_to_file(credentials_json):
@@ -30,10 +37,10 @@ def get_time_range_for_date(date):
     end_of_day = datetime.datetime.combine(end_date, datetime.time.max).isoformat() + 'Z'
     return start_of_day, end_of_day
 
-def get_events_for_date(service, start_of_day, end_of_day):
+def get_events_for_date(service, start_of_day, end_of_day, calendar_id):
     print(f'Getting events for date from {start_of_day} to {end_of_day}')
     events_result = service.events().list(
-        calendarId='primary',
+        calendarId=calendar_id,
         timeMin=start_of_day,
         timeMax=end_of_day,
         singleEvents=True,
@@ -58,6 +65,8 @@ def lambda_handler(event, context):
     write_credentials_to_file(google_credentials_json)
     service = get_calendar_service()
     
+    calendar_id = get_ssm_parameter('calendar-id')
+    
     date_str = event.get('queryStringParameters', {}).get('date')
     if not date_str:
         return {
@@ -74,7 +83,7 @@ def lambda_handler(event, context):
         }
     
     start_of_day, end_of_day = get_time_range_for_date(date)
-    events = get_events_for_date(service, start_of_day, end_of_day)
+    events = get_events_for_date(service, start_of_day, end_of_day, calendar_id)
     
     # Return the three nearest upcoming events with specified fields
     nearest_events = [format_event(event) for event in events[:3]]

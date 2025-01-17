@@ -7,3 +7,13 @@ resource "aws_ssm_parameter" "google_credentials" {
     ignore_changes = [value]
   }
 }
+
+resource "aws_ssm_parameter" "calendar_id" {
+  name        = "calendar-id"
+  description = "Google service account calendar ID for accessing the Calendar API"
+  type        = "SecureString"
+  value       = " "
+  lifecycle {
+    ignore_changes = [value]
+  }
+}
