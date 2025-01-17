@@ -25,7 +25,7 @@ resource "aws_iam_policy" "calendar" {
         Action = [
           "ssm:GetParameter"
         ],
-        Resource = "arn:aws:ssm:*:${data.aws_caller_identity.current.account_id}:parameter/calendar-google-credentials-json"
+        Resource = "arn:aws:ssm:*:${data.aws_caller_identity.current.account_id}:parameter/calendar-*"
       }
     ]
   })
