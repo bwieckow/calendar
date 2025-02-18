@@ -8,8 +8,8 @@ resource "aws_ssm_parameter" "google_credentials" {
   }
 }
 
-resource "aws_ssm_parameter" "calendar_id" {
-  name        = "calendar-id"
+resource "aws_ssm_parameter" "calendar_token" {
+  name        = "calendar-token-json"
   description = "Google service account calendar ID for accessing the Calendar API"
   type        = "SecureString"
   value       = " "
