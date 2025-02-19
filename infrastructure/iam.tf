@@ -23,7 +23,8 @@ resource "aws_iam_policy" "calendar" {
       {
         Effect = "Allow",
         Action = [
-          "ssm:GetParameter"
+          "ssm:GetParameter",
+          "ssm:PutParameter"
         ],
         Resource = "arn:aws:ssm:*:${data.aws_caller_identity.current.account_id}:parameter/calendar-*"
       }
