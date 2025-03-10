@@ -54,7 +54,7 @@ resource "aws_lambda_function" "calendar_2" {
   provider = aws.virginia
 
   function_name = "calendar"
-  role          = aws_iam_role.calendar_2.arn
+  role          = aws_iam_role.calendar.arn
   handler       = "lambda_function.lambda_handler"
   runtime       = "python3.13" # Latest Python version supported by AWS Lambda
 
