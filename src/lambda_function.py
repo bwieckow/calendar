@@ -10,7 +10,7 @@ import json
 SCOPES = ["https://www.googleapis.com/auth/calendar"]
 
 def get_ssm_parameter(name):
-    ssm_client = boto3.client('ssm')
+    ssm_client = boto3.client('ssm', region_name='eu-west-1')
     parameter = ssm_client.get_parameter(
         Name=name,
         WithDecryption=True
@@ -18,7 +18,7 @@ def get_ssm_parameter(name):
     return parameter['Parameter']['Value']
 
 def put_ssm_parameter(name, value):
-    ssm_client = boto3.client('ssm')
+    ssm_client = boto3.client('ssm', region_name='eu-west-1')
     ssm_client.put_parameter(
         Name=name,
         Value=value,
