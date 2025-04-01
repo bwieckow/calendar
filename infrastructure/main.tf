@@ -33,10 +33,20 @@ resource "aws_lambda_function_url" "calendar" {
   provider = aws.virginia
 
   function_name      = aws_lambda_function.calendar.function_name
-  authorization_type = "NONE"
+  authorization_type = "AWS_IAM"
   cors {
-    allow_origins = ["http://localhost:3000", "http://opsmaster.s3-website-eu-west-1.amazonaws.com"]
+    allow_origins = ["http://localhost:3000", "http://opsmaster.s3-website-eu-west-1.amazonaws.com", "https://ops-master.com", "https://www.ops-master.com"]
     allow_methods = ["GET", "POST"]
     allow_headers = ["*"]
   }
+}
+
+resource "aws_lambda_permission" "cloudfront_origin_access_control" {
+  provider = aws.virginia
+
+  statement_id  = "AllowCloudFrontServicePrincipal"
+  action        = "lambda:InvokeFunctionUrl"
+  function_name = aws_lambda_function.calendar.function_name
+  principal     = "cloudfront.amazonaws.com"
+  source_arn    = data.aws_cloudfront_distribution.opsmaster.arn
 }
