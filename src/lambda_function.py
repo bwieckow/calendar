@@ -168,6 +168,7 @@ def handle_post_request(event, service):
     
     try:
         updated_event = invite_to_event(service, event_id, email)
+        print(f'Invitation sent: {format_event(updated_event)}')
         return {
             'statusCode': 200,
             'body': json.dumps({'message': 'Invitation sent', 'event': format_event(updated_event)})
