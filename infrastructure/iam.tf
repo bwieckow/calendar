@@ -16,7 +16,7 @@ resource "aws_iam_role" "calendar" {
 }
 
 resource "aws_iam_policy" "calendar" {
-  name   = "calendar"
+  name = "calendar"
   policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
@@ -26,7 +26,10 @@ resource "aws_iam_policy" "calendar" {
           "ssm:GetParameter",
           "ssm:PutParameter"
         ],
-        Resource = "arn:aws:ssm:*:${data.aws_caller_identity.current.account_id}:parameter/calendar-*"
+        Resource = [
+          "arn:aws:ssm:*:${data.aws_caller_identity.current.account_id}:parameter/calendar-*",
+          "arn:aws:ssm:*:${data.aws_caller_identity.current.account_id}:parameter/ops-master/cloudfront/*",
+        ]
       }
     ]
   })

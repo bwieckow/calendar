@@ -6,6 +6,7 @@ from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 import json
+import hashlib
 
 SCOPES = ["https://www.googleapis.com/auth/calendar"]
 
@@ -168,6 +169,7 @@ def handle_post_request(event, service):
     
     try:
         updated_event = invite_to_event(service, event_id, email)
+        print(f'Invitation sent: {format_event(updated_event)}')
         return {
             'statusCode': 200,
             'body': json.dumps({'message': 'Invitation sent', 'event': format_event(updated_event)})
@@ -179,16 +181,73 @@ def handle_post_request(event, service):
             'body': f'Error inviting to event: {str(e)}'
         }
 
+def validate_api_key(headers):
+    api_key = headers.get('x-api-key')
+    expected_api_key = get_ssm_parameter('/ops-master/cloudfront/apikey')
+    if api_key != expected_api_key:
+        print('Error: Invalid API key')
+        return False
+    return True
+
+def validate_payu_signature(headers, body):
+    """
+    Validates the PayU signature of an incoming POST notification.
+    Follows the process described in the PayU documentation.
+    """
+    signature_header = headers.get('openpayu-signature')
+    if not signature_header:
+        print('Error: Missing openpayu-signature header')
+        return False
+
+    # Extract the signature part from the header
+    try:
+        signature = next(part.split('=')[1] for part in signature_header.split(';') if part.startswith('signature='))
+    except (IndexError, StopIteration):
+        print('Error: Invalid openpayu-signature format')
+        return False
+    
+    print(f'PayU signature: {signature}')
+
+    if not signature:
+        print('Error: Missing PayU signature header')
+        return False
+
+    second_key = get_ssm_parameter('calendar-payu-second-key')
+    concatenated_string = f"{body}{second_key}"
+
+    # Calculate the expected signature using MD5
+    expected_signature = hashlib.md5(concatenated_string.encode('utf-8')).hexdigest()
+
+    # Compare the provided signature with the expected signature
+    if signature != expected_signature:
+        print(f'Error: Invalid PayU signature. Expected: {expected_signature}, Received: {signature}')
+        return False
+    
+    print('PayU signature is valid')
+    return True
+
 def lambda_handler(event, context):
     try:
+        headers = event.get('headers', {})
+        if not validate_api_key(headers):
+            return {
+                'statusCode': 403,
+                'body': 'Forbidden: Invalid API key'
+            }
+
         service = get_calendar_service()
-        
         http_method = event['requestContext']['http']['method']
-        
+
         if http_method == 'GET':
             return handle_get_request(event, service)
         elif http_method == 'POST':
-            return handle_post_request(event, service)
+            body = event.get('body', '')
+            if not validate_payu_signature(headers, body):
+                return {
+                    'statusCode': 403,
+                    'body': 'Forbidden: Invalid PayU signature'
+                }
+            # return handle_post_request(event, service)
         else:
             print('Error: Method Not Allowed')
             return {
