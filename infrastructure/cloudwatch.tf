@@ -32,7 +32,7 @@ resource "aws_cloudwatch_metric_alarm" "token_expired_alarm" {
   evaluation_periods  = 1
   threshold           = 1
   comparison_operator = "GreaterThanOrEqualToThreshold"
-  treat_missing_data  = "ignore"
+  treat_missing_data  = "notBreaching"
 
   alarm_actions = [
     aws_sns_topic.token_expired_alarm_topic.arn

@@ -33,7 +33,7 @@ resource "aws_lambda_function_url" "calendar" {
   provider = aws.virginia
 
   function_name      = aws_lambda_function.calendar.function_name
-  authorization_type = "AWS_IAM"
+  authorization_type = "NONE"
   cors {
     allow_origins = ["http://localhost:3000", "http://opsmaster.s3-website-eu-west-1.amazonaws.com", "https://ops-master.com", "https://www.ops-master.com"]
     allow_methods = ["GET", "POST"]
