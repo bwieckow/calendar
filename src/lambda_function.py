@@ -205,8 +205,6 @@ def validate_payu_signature(headers, body):
     except (IndexError, StopIteration):
         print('Error: Invalid openpayu-signature format')
         return False
-    
-    print(f'PayU signature: {signature}')
 
     if not signature:
         print('Error: Missing PayU signature header')
@@ -247,7 +245,7 @@ def lambda_handler(event, context):
                     'statusCode': 403,
                     'body': 'Forbidden: Invalid PayU signature'
                 }
-            # return handle_post_request(event, service)
+            return handle_post_request(event, service)
         else:
             print('Error: Method Not Allowed')
             return {
