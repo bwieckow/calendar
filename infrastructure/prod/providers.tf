@@ -3,8 +3,9 @@ provider "aws" {
 
   default_tags {
     tags = {
-      Name    = "calendar"
-      Project = "opsmaster"
+      Name        = "calendar"
+      Project     = "opsmaster"
+      Environment = "prod"
     }
   }
 }
@@ -15,8 +16,9 @@ provider "aws" {
 
   default_tags {
     tags = {
-      Name    = "calendar"
-      Project = "opsmaster"
+      Name        = "calendar"
+      Project     = "opsmaster"
+      Environment = "prod"
     }
   }
 }

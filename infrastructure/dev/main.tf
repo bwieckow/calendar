@@ -1,8 +1,8 @@
 resource "aws_lambda_layer_version" "google_layer" {
   provider = aws.virginia
 
-  filename            = "google_lambda_layer/google-layer.zip"
-  source_code_hash    = filebase64sha256("google_lambda_layer/google-layer.zip")
+  filename            = "../google_lambda_layer/google-layer.zip"
+  source_code_hash    = filebase64sha256("../google_lambda_layer/google-layer.zip")
   layer_name          = "google_layer"
   compatible_runtimes = ["python3.13"]
 }
@@ -10,7 +10,7 @@ resource "aws_lambda_layer_version" "google_layer" {
 resource "aws_lambda_function" "calendar" {
   provider = aws.virginia
 
-  function_name = "calendar"
+  function_name = "calendar-dev"
   role          = aws_iam_role.calendar.arn
   handler       = "lambda_function.lambda_handler"
   runtime       = "python3.13" # Latest Python version supported by AWS Lambda
@@ -24,7 +24,11 @@ resource "aws_lambda_function" "calendar" {
 
   environment {
     variables = {
-      GOOGLE_CREDENTIALS_PARAM = "calendar-google-credentials-json"
+      ENVIRONMENT              = "dev"
+      GOOGLE_CREDENTIALS_PARAM = "/calendar/dev/google-credentials-json"
+      TOKEN_JSON_PARAM         = "/calendar/dev/token-json"
+      API_KEY_PARAM            = "/ops-master/cloudfront/apikey"
+      SECOND_KEY_PARAM         = "/calendar/dev/payu-second-key"
     }
   }
 }
@@ -41,12 +45,12 @@ resource "aws_lambda_function_url" "calendar" {
   }
 }
 
-resource "aws_lambda_permission" "cloudfront_origin_access_control" {
-  provider = aws.virginia
+# resource "aws_lambda_permission" "cloudfront_origin_access_control" {
+#   provider = aws.virginia
 
-  statement_id  = "AllowCloudFrontServicePrincipal"
-  action        = "lambda:InvokeFunctionUrl"
-  function_name = aws_lambda_function.calendar.function_name
-  principal     = "cloudfront.amazonaws.com"
-  source_arn    = data.aws_cloudfront_distribution.opsmaster.arn
-}
+#   statement_id  = "AllowCloudFrontServicePrincipal"
+#   action        = "lambda:InvokeFunctionUrl"
+#   function_name = aws_lambda_function.calendar.function_name
+#   principal     = "cloudfront.amazonaws.com"
+#   source_arn    = data.aws_cloudfront_distribution.opsmaster.arn
+# }

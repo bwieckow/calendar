@@ -32,12 +32,14 @@ def authenticate():
     token_file = "/tmp/token.json"
 
     # Get client_secret.json from SSM Parameter Store
-    client_secret_json = get_ssm_parameter('calendar-google-credentials-json')
+    GOOGLE_CREDENTIALS_PARAM = os.getenv('GOOGLE_CREDENTIALS_PARAM', 'calendar-google-credentials-json')
+    client_secret_json = get_ssm_parameter(GOOGLE_CREDENTIALS_PARAM)
     with open('/tmp/client_secret.json', 'w') as f:
         f.write(client_secret_json)
 
     # Get token.json from SSM Parameter Store
-    token_json = get_ssm_parameter('calendar-token-json')
+    TOKEN_JSON_PARAM = os.getenv('TOKEN_JSON_PARAM', 'calendar-token-json')
+    token_json = get_ssm_parameter(TOKEN_JSON_PARAM)
     with open(token_file, 'w') as f:
         f.write(token_json)
 
@@ -183,7 +185,8 @@ def handle_post_request(event, service):
 
 def validate_api_key(headers):
     api_key = headers.get('x-api-key')
-    expected_api_key = get_ssm_parameter('/ops-master/cloudfront/apikey')
+    API_KEY_PARAM = os.getenv('API_KEY_PARAM', '/ops-master/cloudfront/apikey')
+    expected_api_key = get_ssm_parameter(API_KEY_PARAM)
     if api_key != expected_api_key:
         print('Error: Invalid API key')
         return False
@@ -212,7 +215,8 @@ def validate_payu_signature(headers, body):
         print('Error: Missing PayU signature header')
         return False
 
-    second_key = get_ssm_parameter('calendar-payu-second-key')
+    SECOND_KEY_PARAM = os.getenv('SECOND_KEY_PARAM', 'calendar-payu-second-key')
+    second_key = get_ssm_parameter(SECOND_KEY_PARAM)
     concatenated_string = f"{body}{second_key}"
 
     # Calculate the expected signature using MD5

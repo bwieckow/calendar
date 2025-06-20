@@ -27,8 +27,8 @@ resource "aws_iam_policy" "calendar" {
           "ssm:PutParameter"
         ],
         Resource = [
-          "arn:aws:ssm:*:${data.aws_caller_identity.current.account_id}:parameter/calendar-*",
-          "arn:aws:ssm:*:${data.aws_caller_identity.current.account_id}:parameter/ops-master/cloudfront/*",
+          "arn:aws:ssm:*:${data.aws_caller_identity.current.account_id}:parameter/calendar/prod/*",
+          "arn:aws:ssm:*:${data.aws_caller_identity.current.account_id}:parameter/ops-master/cloudfront/*"
         ]
       }
     ]
