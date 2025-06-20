@@ -30,7 +30,7 @@ resource "aws_ssm_parameter" "payu_second_key" {
 }
 
 # NEW
-resource "aws_ssm_parameter" "google_credentials" {
+resource "aws_ssm_parameter" "google_credentials_json" {
   name        = "/calendar/prod/google-credentials-json"
   description = "Google service account credentials for accessing the Calendar API"
   type        = "SecureString"
@@ -40,7 +40,7 @@ resource "aws_ssm_parameter" "google_credentials" {
   }
 }
 
-resource "aws_ssm_parameter" "calendar_token" {
+resource "aws_ssm_parameter" "calendar_token_json" {
   name        = "/calendar/prod/token-json"
   description = "Google service account calendar ID for accessing the Calendar API"
   type        = "SecureString"
@@ -50,7 +50,7 @@ resource "aws_ssm_parameter" "calendar_token" {
   }
 }
 
-resource "aws_ssm_parameter" "payu_second_key" {
+resource "aws_ssm_parameter" "payu_second_key_new" {
   name        = "/calendar/prod/payu-second-key"
   description = "PayU second key for validating PayU Signature"
   type        = "SecureString"
