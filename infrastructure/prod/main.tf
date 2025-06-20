@@ -2,7 +2,7 @@ resource "aws_lambda_layer_version" "google_layer" {
   provider = aws.virginia
 
   filename            = "../google_lambda_layer/google-layer.zip"
-  source_code_hash    = filebase64sha256("google_lambda_layer/google-layer.zip")
+  source_code_hash    = filebase64sha256("../google_lambda_layer/google-layer.zip")
   layer_name          = "google_layer"
   compatible_runtimes = ["python3.13"]
 }
