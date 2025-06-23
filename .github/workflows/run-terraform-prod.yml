@@ -1,6 +1,6 @@
 # This is a workflow to see what will be affected with upcoming changes
 
-name: Terraform
+name: Terraform Prod
 
 # Controls when the action will run. Triggers the workflow on pull request
 # events but only for the main branch
@@ -26,10 +26,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       tf_plan_exitcode: ${{ steps.tf_plan.outputs.exitcode }}
-    strategy:
-      fail-fast: false
-      matrix:
-        env: [dev, prod]
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -62,10 +58,10 @@ jobs:
         zip -r google-layer.zip python
 
     # Runs a `terraform plan` command using the runners shell
-    - name: Run terraform plan ${{ matrix.env }}
+    - name: Run terraform plan prod
       id: tf_plan
       run: |
-        cd ./infrastructure/${{ matrix.env }}
+        cd ./infrastructure/prod
         terraform version
         terraform init
         terraform plan -detailed-exitcode
@@ -77,7 +73,7 @@ jobs:
       fail-fast: false
       matrix:
         env: [dev, prod]
-    environment: ${{ matrix.env }}
+    environment: prod
     if: github.event_name == 'push' && needs.plan.outputs.tf_plan_exitcode == '2'
     steps:
       - uses: actions/checkout@v4
@@ -106,9 +102,9 @@ jobs:
           # Zip the contents of the python directory
           zip -r google-layer.zip python
 
-      - name: Run terraform apply ${{ matrix.env }}
+      - name: Run terraform apply prod
         run: |
-          cd ./infrastructure/${{ matrix.env }}
+          cd ./infrastructure/prod
           terraform version
           terraform init
           terraform apply -auto-approve
