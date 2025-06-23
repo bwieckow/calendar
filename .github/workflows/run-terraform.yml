@@ -8,11 +8,13 @@ on:
   pull_request:
     branches: [ main ]
     paths:
+      - '.github/workflows/run-terraform.yml'
       - 'infrastructure/**'
       - 'src/**'
   push:
     branches: [ main ]
     paths:
+      - '.github/workflows/run-terraform.yml'
       - 'infrastructure/**'
       - 'src/**'
 
@@ -22,6 +24,8 @@ jobs:
   plan:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
+    outputs:
+      tf_plan_exitcode: ${{ steps.tf_plan.outputs.exitcode }}
     strategy:
       fail-fast: false
       matrix:
@@ -65,7 +69,6 @@ jobs:
         terraform version
         terraform init
         terraform plan -detailed-exitcode
-        echo "exit_code=$?" >> $GITHUB_OUTPUT
     
   apply:
     needs: plan
@@ -75,7 +78,7 @@ jobs:
       matrix:
         env: [dev, prod]
     environment: ${{ matrix.env }}
-    if: github.event_name == 'push' && needs.plan.outputs['tf_plan.exit_code'] == '2'
+    if: github.event_name == 'push' && needs.plan.outputs.tf_plan_exitcode == '2'
     steps:
       - uses: actions/checkout@v4
       - uses: hashicorp/setup-terraform@v3
