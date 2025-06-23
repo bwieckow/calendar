@@ -8,14 +8,14 @@ on:
   pull_request:
     branches: [ main ]
     paths:
-      - '.github/workflows/run-terraform.yml'
-      - 'infrastructure/**'
+      - '.github/workflows/run-terraform-prod.yml'
+      - 'infrastructure/prod/**'
       - 'src/**'
   push:
     branches: [ main ]
     paths:
-      - '.github/workflows/run-terraform.yml'
-      - 'infrastructure/**'
+      - '.github/workflows/run-terraform-prod.yml'
+      - 'infrastructure/prod/**'
       - 'src/**'
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
@@ -69,10 +69,6 @@ jobs:
   apply:
     needs: plan
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        env: [dev, prod]
     environment: prod
     if: github.event_name == 'push' && needs.plan.outputs.tf_plan_exitcode == '2'
     steps:
