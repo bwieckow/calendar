@@ -8,14 +8,14 @@ on:
   pull_request:
     branches: [ main ]
     paths:
-      - '.github/workflows/run-terraform.yml'
-      - 'infrastructure/**'
+      - '.github/workflows/run-terraform-dev.yml'
+      - 'infrastructure/dev/**'
       - 'src/**'
   push:
     branches: [ main ]
     paths:
-      - '.github/workflows/run-terraform.yml'
-      - 'infrastructure/**'
+      - '.github/workflows/run-terraform-dev.yml'
+      - 'infrastructure/dev/**'
       - 'src/**'
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
