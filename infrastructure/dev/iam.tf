@@ -30,6 +30,14 @@ resource "aws_iam_policy" "calendar" {
           "arn:aws:ssm:*:${data.aws_caller_identity.current.account_id}:parameter/calendar/dev/*",
           "arn:aws:ssm:*:${data.aws_caller_identity.current.account_id}:parameter/ops-master/cloudfront/*"
         ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "ses:SendEmail",
+          "ses:SendRawEmail"
+        ]
+        Resource = "*"
       }
     ]
   })
