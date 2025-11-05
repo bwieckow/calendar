@@ -1,14 +1,14 @@
 import os
 import datetime
 import boto3
-import google.auth.transport.requests
-from googleapiclient.discovery import build
-from google.oauth2.credentials import Credentials
-from google_auth_oauthlib.flow import InstalledAppFlow
 import json
 import hashlib
-
-SCOPES = ["https://www.googleapis.com/auth/calendar"]
+from urllib.request import urlopen
+from icalendar import Calendar, Event as ICalEvent
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.base import MIMEBase
+from email import encoders
 
 def get_ssm_parameter(name):
     ssm_client = boto3.client('ssm', region_name='eu-west-1')
@@ -18,101 +18,154 @@ def get_ssm_parameter(name):
     )
     return parameter['Parameter']['Value']
 
-def put_ssm_parameter(name, value):
-    ssm_client = boto3.client('ssm', region_name='eu-west-1')
-    ssm_client.put_parameter(
-        Name=name,
-        Value=value,
-        Type='String',
-        Overwrite=True
-    )
-
-def authenticate():
-    creds = None
-    token_file = "/tmp/token.json"
-
-    # Get client_secret.json from SSM Parameter Store
-    GOOGLE_CREDENTIALS_PARAM = os.getenv('GOOGLE_CREDENTIALS_PARAM', 'calendar-google-credentials-json')
-    client_secret_json = get_ssm_parameter(GOOGLE_CREDENTIALS_PARAM)
-    with open('/tmp/client_secret.json', 'w') as f:
-        f.write(client_secret_json)
-
-    # Get token.json from SSM Parameter Store
-    TOKEN_JSON_PARAM = os.getenv('TOKEN_JSON_PARAM', 'calendar-token-json')
-    token_json = get_ssm_parameter(TOKEN_JSON_PARAM)
-    with open(token_file, 'w') as f:
-        f.write(token_json)
-
-    # Load existing token if available
-    if os.path.exists(token_file):
-        creds = Credentials.from_authorized_user_file(token_file, SCOPES)
-
-    # If no valid credentials, perform authentication
-    if not creds or not creds.valid:
-        try:
-            if creds and creds.expired and creds.refresh_token:
-                creds.refresh(google.auth.transport.requests.Request())
-                print("Token refreshed successfully.")
-            else:
-                raise Exception("No valid refresh token available.")
-        except Exception as e:
-            print(f"Error refreshing token: {str(e)}")
-            flow = InstalledAppFlow.from_client_secrets_file("/tmp/client_secret.json", SCOPES)
-            creds = flow.run_local_server(port=8080)
-            print("Authenticated successfully.")
-
-        # Save credentials for future use
-        with open(token_file, "w") as token:
-            token.write(creds.to_json())
-
-        # Update token.json in SSM Parameter Store
-        put_ssm_parameter('calendar-token-json', creds.to_json())
-
-    return creds
-
-def get_calendar_service():
-    creds = authenticate()
-    service = build('calendar', 'v3', credentials=creds)
-    return service
+def get_calendar_feed():
+    """Fetch and parse iCalendar feed from Google Calendar"""
+    ICAL_URL_PARAM = os.getenv('ICAL_URL_PARAM', '/calendar/dev/ical-feed-url')
+    ical_url = get_ssm_parameter(ICAL_URL_PARAM)
+    
+    print(f'Fetching calendar feed from URL')
+    response = urlopen(ical_url)
+    ical_data = response.read()
+    
+    calendar = Calendar.from_ical(ical_data)
+    return calendar
 
 def get_time_range_for_date(date):
-    start_of_day = datetime.datetime.combine(date, datetime.time.min).isoformat() + 'Z'
+    start_of_day = datetime.datetime.combine(date, datetime.time.min)
     end_date = date + datetime.timedelta(days=90)  # 3 months later
-    end_of_day = datetime.datetime.combine(end_date, datetime.time.max).isoformat() + 'Z'
+    end_of_day = datetime.datetime.combine(end_date, datetime.time.max)
     return start_of_day, end_of_day
 
-def get_events_for_date(service, start_of_day, end_of_day):
+def get_events_for_date(calendar, start_of_day, end_of_day):
+    """Extract events from calendar feed within date range"""
     print(f'Getting events for date from {start_of_day} to {end_of_day}')
-    events_result = service.events().list(
-        calendarId="primary",
-        timeMin=start_of_day,
-        timeMax=end_of_day,
-        singleEvents=True,
-        orderBy='startTime'
-    ).execute()
-    events = events_result.get('items', [])
-    print(f'Found {len(events)} events for the date')
+    events = []
+    
+    for component in calendar.walk():
+        if component.name == "VEVENT":
+            event_start = component.get('dtstart').dt
+            
+            # Handle both date and datetime objects
+            if isinstance(event_start, datetime.date) and not isinstance(event_start, datetime.datetime):
+                event_start = datetime.datetime.combine(event_start, datetime.time.min)
+            
+            # Make timezone-naive for comparison
+            if event_start.tzinfo:
+                event_start = event_start.replace(tzinfo=None)
+            
+            if start_of_day <= event_start <= end_of_day:
+                events.append(component)
+    
+    # Sort events by start time
+    events.sort(key=lambda e: e.get('dtstart').dt)
+    print(f'Found {len(events)} events for the date range')
     return events
 
 def format_event(event):
+    """Format iCalendar event for JSON response"""
+    start = event.get('dtstart').dt
+    end = event.get('dtend').dt
+    
+    # Convert to ISO format strings
+    start_str = start.isoformat() if isinstance(start, datetime.datetime) else start.isoformat()
+    end_str = end.isoformat() if isinstance(end, datetime.datetime) else end.isoformat()
+    
     return {
-        'id': event.get('id'),
-        'summary': event.get('summary'),
-        'start': event['start'],
-        'end': event['end'],
-        'description': event.get('description'),
-        'number_of_attendees': len(event.get('attendees', []))
+        'id': str(event.get('uid')),
+        'summary': str(event.get('summary', '')),
+        'start': {'dateTime': start_str},
+        'end': {'dateTime': end_str},
+        'description': str(event.get('description', '')),
+        'location': str(event.get('location', ''))
     }
 
-def invite_to_event(service, event_id, email):
-    event = service.events().get(calendarId="primary", eventId=event_id).execute()
-    if 'attendees' not in event:
-        event['attendees'] = []
-    event['attendees'].append({'email': email})
-    updated_event = service.events().update(calendarId="primary", eventId=event_id, body=event).execute()
-    return updated_event
+def create_ics_invitation(event_summary, event_description, event_start, event_end, event_location, organizer_email, attendee_email):
+    """Create an .ics calendar invitation file"""
+    cal = Calendar()
+    cal.add('prodid', '-//Calendar Booking System//EN')
+    cal.add('version', '2.0')
+    cal.add('method', 'REQUEST')
+    
+    event = ICalEvent()
+    event.add('summary', event_summary)
+    event.add('description', event_description)
+    event.add('dtstart', event_start)
+    event.add('dtend', event_end)
+    event.add('location', event_location)
+    event.add('uid', f'{hash(attendee_email + str(event_start))}@calendar-booking')
+    event.add('dtstamp', datetime.datetime.now())
+    event.add('status', 'CONFIRMED')
+    
+    # Add organizer
+    event.add('organizer', f'mailto:{organizer_email}')
+    
+    # Add attendee
+    event.add('attendee', f'mailto:{attendee_email}', parameters={
+        'CUTYPE': 'INDIVIDUAL',
+        'ROLE': 'REQ-PARTICIPANT',
+        'PARTSTAT': 'NEEDS-ACTION',
+        'RSVP': 'TRUE'
+    })
+    
+    cal.add_component(event)
+    return cal.to_ical()
 
-def handle_get_request(event, service):
+def send_calendar_invitation_email(to_email, event_summary, event_description, event_start, event_end, event_location):
+    """Send calendar invitation via AWS SES with .ics attachment"""
+    SES_FROM_EMAIL_PARAM = os.getenv('SES_FROM_EMAIL_PARAM', '/calendar/dev/ses-from-email')
+    from_email = get_ssm_parameter(SES_FROM_EMAIL_PARAM)
+    
+    ses_client = boto3.client('ses', region_name='eu-west-1')
+    
+    # Create the email message
+    msg = MIMEMultipart('mixed')
+    msg['Subject'] = f'Calendar Invitation: {event_summary}'
+    msg['From'] = from_email
+    msg['To'] = to_email
+    
+    # Email body
+    body_text = f"""
+You have been invited to the following event:
+
+Event: {event_summary}
+Date: {event_start.strftime('%Y-%m-%d %H:%M')} - {event_end.strftime('%Y-%m-%d %H:%M')}
+Location: {event_location}
+
+Description:
+{event_description}
+
+This invitation has been added as a calendar attachment. Please accept or decline using your calendar application.
+    """
+    
+    msg_body = MIMEText(body_text, 'plain', 'utf-8')
+    msg.attach(msg_body)
+    
+    # Create .ics attachment
+    ics_content = create_ics_invitation(
+        event_summary, event_description, event_start, event_end, 
+        event_location, from_email, to_email
+    )
+    
+    ics_attachment = MIMEBase('text', 'calendar', method='REQUEST', name='invite.ics')
+    ics_attachment.set_payload(ics_content)
+    encoders.encode_base64(ics_attachment)
+    ics_attachment.add_header('Content-Disposition', 'attachment', filename='invite.ics')
+    msg.attach(ics_attachment)
+    
+    # Send email
+    try:
+        response = ses_client.send_raw_email(
+            Source=from_email,
+            Destinations=[to_email],
+            RawMessage={'Data': msg.as_string()}
+        )
+        print(f'Email sent successfully. Message ID: {response["MessageId"]}')
+        return response
+    except Exception as e:
+        print(f'Error sending email: {str(e)}')
+        raise
+
+def handle_get_request(event, calendar):
     date_str = event.get('queryStringParameters', {}).get('date')
     if not date_str:
         print('Error: date query parameter is required')
@@ -131,16 +184,16 @@ def handle_get_request(event, service):
         }
     
     start_of_day, end_of_day = get_time_range_for_date(date)
-    events = get_events_for_date(service, start_of_day, end_of_day)
+    events = get_events_for_date(calendar, start_of_day, end_of_day)
     
     # Return the three nearest upcoming events with specified fields
-    nearest_events = [format_event(event) for event in events[:3]]
+    nearest_events = [format_event(evt) for evt in events[:3]]
     return {
         'statusCode': 200,
         'body': json.dumps(nearest_events)
     }
 
-def handle_post_request(event, service):
+def handle_post_request(event, calendar):
     body = json.loads(event.get('body', '{}'))
     print(f'POST request body: {body}')
     
@@ -169,18 +222,54 @@ def handle_post_request(event, service):
             'body': 'Order status must be COMPLETED to invite to event'
         }
     
+    # Find the event in the calendar
+    target_event = None
+    for component in calendar.walk():
+        if component.name == "VEVENT" and str(component.get('uid')) == event_id:
+            target_event = component
+            break
+    
+    if not target_event:
+        print(f'Error: Event with ID {event_id} not found')
+        return {
+            'statusCode': 404,
+            'body': f'Event with ID {event_id} not found'
+        }
+    
     try:
-        updated_event = invite_to_event(service, event_id, email)
-        print(f'Invitation sent: {format_event(updated_event)}')
+        # Extract event details
+        event_summary = str(target_event.get('summary', 'Event'))
+        event_description = str(target_event.get('description', ''))
+        event_start = target_event.get('dtstart').dt
+        event_end = target_event.get('dtend').dt
+        event_location = str(target_event.get('location', ''))
+        
+        # Convert date to datetime if needed
+        if isinstance(event_start, datetime.date) and not isinstance(event_start, datetime.datetime):
+            event_start = datetime.datetime.combine(event_start, datetime.time(9, 0))
+        if isinstance(event_end, datetime.date) and not isinstance(event_end, datetime.datetime):
+            event_end = datetime.datetime.combine(event_end, datetime.time(17, 0))
+        
+        # Send invitation email
+        send_calendar_invitation_email(
+            email, event_summary, event_description, 
+            event_start, event_end, event_location
+        )
+        
+        print(f'Invitation sent to {email} for event: {event_summary}')
         return {
             'statusCode': 200,
-            'body': json.dumps({'message': 'Invitation sent', 'event': format_event(updated_event)})
+            'body': json.dumps({
+                'message': 'Invitation sent successfully',
+                'event': format_event(target_event),
+                'email': email
+            })
         }
     except Exception as e:
-        print(f'Error inviting to event: {str(e)}')
+        print(f'Error sending invitation: {str(e)}')
         return {
             'statusCode': 500,
-            'body': f'Error inviting to event: {str(e)}'
+            'body': f'Error sending invitation: {str(e)}'
         }
 
 def validate_api_key(headers):
@@ -239,11 +328,11 @@ def lambda_handler(event, context):
                 'body': 'Forbidden: Invalid API key'
             }
 
-        service = get_calendar_service()
+        calendar = get_calendar_feed()
         http_method = event['requestContext']['http']['method']
 
         if http_method == 'GET':
-            return handle_get_request(event, service)
+            return handle_get_request(event, calendar)
         elif http_method == 'POST':
             body = event.get('body', '')
             if not validate_payu_signature(headers, body):
@@ -251,7 +340,7 @@ def lambda_handler(event, context):
                     'statusCode': 403,
                     'body': 'Forbidden: Invalid PayU signature'
                 }
-            # return handle_post_request(event, service)
+            return handle_post_request(event, calendar)
         else:
             print('Error: Method Not Allowed')
             return {
