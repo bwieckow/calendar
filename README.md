@@ -4,6 +4,8 @@ This project contains a Lambda function to interact with Google Calendar via iCa
 - **GET**: Retrieve the nearest upcoming events for a given date by parsing an iCalendar feed.
 - **POST**: Send calendar invitation via email (AWS SES) to a specified email address when PayU order status is `COMPLETED`.
 
+> **📚 For Developers**: See [ARCHITECTURE.md](src/ARCHITECTURE.md) for detailed code structure and module documentation.
+
 ## Architecture
 
 The solution uses:
@@ -11,6 +13,7 @@ The solution uses:
 - **AWS SES**: Sends calendar invitations (.ics files) via email
 - **AWS Lambda**: Serverless function to handle API requests
 - **AWS SSM Parameter Store**: Stores sensitive configuration (API keys, calendar feed URL)
+- **AWS DynamoDB**: Tracks events and participant counts
 
 ## Prerequisites
 

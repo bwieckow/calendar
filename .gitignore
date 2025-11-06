@@ -1,6 +1,6 @@
 **/venv
 **/__pycache__
-src/event_*.json
+src/*event_*.json
 **/.terraform
 **/.terraform.lock.hcl
 **/google_lambda_layer/python

@@ -22,7 +22,7 @@ resource "aws_ssm_parameter" "ses_from_email" {
   name        = "/calendar/dev/ses-from-email"
   description = "SES from email address for sending emails"
   type        = "SecureString"
-  value       = aws_ses_email_identity.calendar_email.email
+  value       = aws_ses_email_identity.calendar.email
 }
 
 resource "aws_ssm_parameter" "calendar_token" {
