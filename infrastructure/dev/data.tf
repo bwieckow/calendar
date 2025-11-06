@@ -6,6 +6,11 @@ data "archive_file" "lambda_zip" {
   output_path = "lambda_function.zip"
 }
 
+data "aws_route53_zone" "opsmaster" {
+  name         = "ops-master.com"
+  private_zone = false
+}
+
 # data "aws_ssm_parameter" "cloudfront_distribution_id" {
 #   name = "/ops-master/cloudfront/distribution_id"
 # }
