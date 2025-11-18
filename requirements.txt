@@ -1,8 +1,8 @@
 boto3
 icalendar
+recurring-ical-events
 google-auth
 google-auth-oauthlib
 google-auth-httplib2
 google-api-python-client
 requests
-# hashlib

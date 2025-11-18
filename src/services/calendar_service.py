@@ -3,6 +3,7 @@ import os
 import datetime
 from urllib.request import urlopen
 from icalendar import Calendar
+import recurring_ical_events
 
 from utils.aws_services import get_ssm_parameter
 
@@ -44,6 +45,7 @@ def get_time_range_for_date(date):
 def get_events_for_date(calendar, start_of_day, end_of_day):
     """
     Extract events from calendar feed within date range.
+    Includes recurring event instances.
     
     Args:
         calendar: iCalendar object
@@ -51,30 +53,19 @@ def get_events_for_date(calendar, start_of_day, end_of_day):
         end_of_day: End datetime for filtering
         
     Returns:
-        list: Sorted list of event components
+        list: Sorted list of event components (including recurring instances)
     """
     print(f'Getting events for date from {start_of_day} to {end_of_day}')
-    events = []
     
-    for component in calendar.walk():
-        if component.name == "VEVENT":
-            event_start = component.get('dtstart').dt
-            
-            # Handle both date and datetime objects
-            if isinstance(event_start, datetime.date) and not isinstance(event_start, datetime.datetime):
-                event_start = datetime.datetime.combine(event_start, datetime.time.min)
-            
-            # Make timezone-naive for comparison
-            if hasattr(event_start, 'tzinfo') and event_start.tzinfo:
-                event_start = event_start.replace(tzinfo=None)
-            
-            if start_of_day <= event_start <= end_of_day:
-                events.append(component)
+    # Use recurring_ical_events to expand recurring events
+    events = recurring_ical_events.of(calendar).between(start_of_day, end_of_day)
     
     # Sort events by start time
-    events.sort(key=lambda e: e.get('dtstart').dt)
-    print(f'Found {len(events)} events for the date range')
-    return events
+    events_list = list(events)
+    events_list.sort(key=lambda e: e.get('dtstart').dt)
+    
+    print(f'Found {len(events_list)} events for the date range (including recurring instances)')
+    return events_list
 
 
 def find_event_by_id(calendar, event_id):
