@@ -1,9 +1,9 @@
-resource "aws_lambda_layer_version" "google_layer" {
+resource "aws_lambda_layer_version" "ical_layer" {
   provider = aws.virginia
 
-  filename            = "../google_lambda_layer/google-layer.zip"
-  source_code_hash    = filebase64sha256("../google_lambda_layer/google-layer.zip")
-  layer_name          = "google_layer"
+  filename            = "../ical_lambda_layer/ical-layer.zip"
+  source_code_hash    = filebase64sha256("../ical_lambda_layer/ical-layer.zip")
+  layer_name          = "ical_layer"
   compatible_runtimes = ["python3.13"]
 }
 
@@ -18,7 +18,7 @@ resource "aws_lambda_function" "calendar" {
   filename         = data.archive_file.lambda_zip.output_path
   source_code_hash = data.archive_file.lambda_zip.output_base64sha256
 
-  layers = [aws_lambda_layer_version.google_layer.arn]
+  layers = [aws_lambda_layer_version.ical_layer.arn]
 
   timeout = 15
 
