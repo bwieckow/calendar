@@ -103,9 +103,28 @@ def format_event(event, include_attendee_count=False, attendee_count=0):
     # Convert to ISO format strings
     start_str = start.isoformat() if isinstance(start, datetime.datetime) else start.isoformat()
     end_str = end.isoformat() if isinstance(end, datetime.datetime) else end.isoformat()
+
+    # Get base UID
+    event_id = str(event.get('uid'))
+    
+    # Check for RECURRENCE-ID and append to ID if present
+    recurrence_id = event.get('RECURRENCE-ID')
+    if recurrence_id:
+        recurrence_dt = recurrence_id.dt
+        # Extract date in YYYYMMDD format
+        if isinstance(recurrence_dt, datetime.datetime):
+            recurrence_date = recurrence_dt.strftime('%Y%m%d')
+        elif isinstance(recurrence_dt, datetime.date):
+            recurrence_date = recurrence_dt.strftime('%Y%m%d')
+        else:
+            # Fallback: convert to string and extract date part
+            recurrence_date = str(recurrence_dt).split()[0].replace('-', '')
+        
+        event_id = f"{event_id}_{recurrence_date}"
+        print(f'Event ID with recurrence: {event_id}')
     
     event_data = {
-        'id': str(event.get('uid')),
+        'id': event_id,
         'summary': str(event.get('summary', '')),
         'start': {'dateTime': start_str},
         'end': {'dateTime': end_str},
