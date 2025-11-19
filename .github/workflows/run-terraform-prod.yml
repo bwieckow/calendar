@@ -44,9 +44,9 @@ jobs:
         aws-secret-access-key: ${{ secrets.TERRAFORM_SECRET_ACCESS_KEY }}
         aws-region: eu-west-1
 
-    - name: Create google lambda layer
+    - name: Create ical lambda layer
       run: |
-        cd ./infrastructure/google_lambda_layer
+        cd ./infrastructure/ical_lambda_layer
 
         # Create a directory for the dependencies
         mkdir -p python
@@ -55,7 +55,7 @@ jobs:
         pip install -r requirements.txt -t python
 
         # Zip the contents of the python directory
-        zip -r google-layer.zip python
+        zip -r ical-layer.zip python
 
     # Runs a `terraform plan` command using the runners shell
     - name: Run terraform plan prod
@@ -85,9 +85,9 @@ jobs:
           aws-secret-access-key: ${{ secrets.TERRAFORM_SECRET_ACCESS_KEY }}
           aws-region: eu-west-1
       
-      - name: Create google lambda layer
+      - name: Create ical lambda layer
         run: |
-          cd ./infrastructure/google_lambda_layer
+          cd ./infrastructure/ical_lambda_layer
 
           # Create a directory for the dependencies
           mkdir -p python
@@ -96,7 +96,7 @@ jobs:
           pip install -r requirements.txt -t python
 
           # Zip the contents of the python directory
-          zip -r google-layer.zip python
+          zip -r ical-layer.zip python
 
       - name: Run terraform apply prod
         run: |
