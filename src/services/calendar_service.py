@@ -71,18 +71,70 @@ def get_events_for_date(calendar, start_of_day, end_of_day):
 def find_event_by_id(calendar, event_id):
     """
     Find a specific event in the calendar by its UID.
+    Supports recurring events with format: uid_YYYYMMDD
     
     Args:
         calendar: iCalendar object
-        event_id: Event UID to search for
+        event_id: Event UID to search for (may include _YYYYMMDD suffix for recurring events)
         
     Returns:
-        Event component or None if not found
+        tuple: (Event component or None, recurrence_date or None)
     """
+    # Check if this is a recurring event ID (contains _YYYYMMDD suffix)
+    recurrence_date = None
+    base_uid = event_id
+    
+    if '_' in event_id:
+        parts = event_id.rsplit('_', 1)
+        if len(parts) == 2 and len(parts[1]) == 8 and parts[1].isdigit():
+            base_uid = parts[0]
+            # Parse the date from YYYYMMDD format
+            try:
+                recurrence_date = datetime.datetime.strptime(parts[1], '%Y%m%d').date()
+                print(f'Searching for recurring event with base UID: {base_uid}, recurrence date: {recurrence_date}')
+            except ValueError:
+                print(f'Invalid date format in event_id: {parts[1]}')
+                pass
+    
+    # First, try to find the base event
+    base_event = None
     for component in calendar.walk():
-        if component.name == "VEVENT" and str(component.get('uid')) == event_id:
-            return component
-    return None
+        if component.name == "VEVENT" and str(component.get('uid')) == base_uid:
+            base_event = component
+            break
+    
+    if not base_event:
+        print(f'Base event with UID {base_uid} not found')
+        return None, None
+    
+    # If this is a specific occurrence, we need to expand recurring events
+    if recurrence_date:
+        # Calculate a time range around the recurrence date
+        start_of_day = datetime.datetime.combine(recurrence_date, datetime.time.min)
+        end_of_day = datetime.datetime.combine(recurrence_date, datetime.time.max)
+        
+        # Expand recurring events for this specific date
+        events = recurring_ical_events.of(calendar).between(start_of_day, end_of_day)
+        
+        # Find the specific occurrence matching both UID and date
+        for event in events:
+            if str(event.get('uid')) == base_uid:
+                event_start = event.get('dtstart').dt
+                # Convert to date if it's a datetime
+                if isinstance(event_start, datetime.datetime):
+                    event_date = event_start.date()
+                else:
+                    event_date = event_start
+                
+                if event_date == recurrence_date:
+                    print(f'Found specific recurring event occurrence on {recurrence_date}')
+                    return event, recurrence_date
+        
+        print(f'Specific occurrence on {recurrence_date} not found for event {base_uid}')
+        return None, None
+    
+    # If no recurrence date, return the base event
+    return base_event, None
 
 
 def format_event(event, include_attendee_count=False, attendee_count=0):

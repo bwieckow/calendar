@@ -46,9 +46,11 @@ def handle_get_request(event, calendar):
     # Return the three nearest upcoming events with attendee count
     nearest_events = []
     for evt in events[:3]:
-        event_id = str(evt.get('uid'))
+        # Get the formatted event first to get the correct event_id (with recurrence suffix if applicable)
+        formatted_event = format_event(evt, include_attendee_count=False, attendee_count=0)
+        event_id = formatted_event['id']
         attendee_count = get_attendee_count(event_id)
-        formatted_event = format_event(evt, include_attendee_count=True, attendee_count=attendee_count)
+        formatted_event['number_of_attendees'] = attendee_count
         nearest_events.append(formatted_event)
     
     return {
@@ -101,8 +103,8 @@ def handle_post_request(event, calendar):
             'body': 'Order status must be COMPLETED to invite to event'
         }
     
-    # Find the event in the calendar
-    target_event = find_event_by_id(calendar, event_id)
+    # Find the event in the calendar (may be a specific recurring occurrence)
+    target_event, recurrence_date = find_event_by_id(calendar, event_id)
     
     if not target_event:
         print(f'Error: Event with ID {event_id} not found')
@@ -125,10 +127,12 @@ def handle_post_request(event, calendar):
         if isinstance(event_end, datetime.date) and not isinstance(event_end, datetime.datetime):
             event_end = datetime.datetime.combine(event_end, datetime.time(17, 0))
         
-        # Send invitation email
+        # Send invitation email with event UID and recurrence date (if applicable)
+        event_uid = str(target_event.get('uid'))
         send_calendar_invitation(
             email, event_summary, event_description, 
-            event_start, event_end, event_location
+            event_start, event_end, event_location,
+            event_uid, recurrence_date
         )
         
         # Update DynamoDB with event and participant tracking

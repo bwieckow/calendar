@@ -3,6 +3,6 @@
 src/*event_*.json
 **/.terraform
 **/.terraform.lock.hcl
-**/google_lambda_layer/python
-**/google_lambda_layer/google-layer.zip
+**/ical_lambda_layer/python
+**/ical_lambda_layer/ical-layer.zip
 **/lambda_function.zip
