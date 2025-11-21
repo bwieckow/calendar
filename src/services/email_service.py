@@ -12,7 +12,7 @@ from utils.aws_services import get_ssm_parameter
 
 
 def create_ics_invitation(event_summary, event_description, event_start, event_end, 
-                         event_location, organizer_email, attendee_email):
+                         event_location, organizer_email, attendee_email, event_uid, recurrence_date=None):
     """
     Create an .ics calendar invitation file.
     
@@ -24,6 +24,8 @@ def create_ics_invitation(event_summary, event_description, event_start, event_e
         event_location (str): Event location
         organizer_email (str): Organizer email address
         attendee_email (str): Attendee email address
+        event_uid (str): Original event UID from calendar
+        recurrence_date: Date of specific occurrence (for recurring events)
         
     Returns:
         bytes: iCalendar data in bytes
@@ -39,8 +41,19 @@ def create_ics_invitation(event_summary, event_description, event_start, event_e
     event.add('dtstart', event_start)
     event.add('dtend', event_end)
     event.add('location', event_location)
-    event.add('uid', f'{hash(attendee_email + str(event_start))}@calendar-booking')
+    # Use the original event UID to maintain reference to the calendar event
+    event.add('uid', event_uid)
     event.add('dtstamp', datetime.datetime.now())
+    
+    # Add RECURRENCE-ID for specific occurrences of recurring events
+    if recurrence_date:
+        # Use the event start time with the recurrence date
+        if isinstance(event_start, datetime.datetime):
+            recurrence_dt = datetime.datetime.combine(recurrence_date, event_start.time())
+        else:
+            recurrence_dt = recurrence_date
+        event.add('recurrence-id', recurrence_dt)
+        print(f'Added RECURRENCE-ID: {recurrence_dt} for specific event occurrence')
     event.add('status', 'CONFIRMED')
     
     # Add organizer
@@ -59,7 +72,7 @@ def create_ics_invitation(event_summary, event_description, event_start, event_e
 
 
 def send_calendar_invitation(to_email, event_summary, event_description, 
-                            event_start, event_end, event_location):
+                            event_start, event_end, event_location, event_uid, recurrence_date=None):
     """
     Send calendar invitation via AWS SES with .ics attachment.
     
@@ -70,6 +83,8 @@ def send_calendar_invitation(to_email, event_summary, event_description,
         event_start: Event start datetime
         event_end: Event end datetime
         event_location (str): Event location
+        event_uid (str): Original event UID from calendar
+        recurrence_date: Date of specific occurrence (for recurring events)
         
     Returns:
         dict: SES response
@@ -108,7 +123,7 @@ This invitation has been added as a calendar attachment. Please accept or declin
     # Create .ics attachment
     ics_content = create_ics_invitation(
         event_summary, event_description, event_start, event_end, 
-        event_location, from_email, to_email
+        event_location, from_email, to_email, event_uid, recurrence_date
     )
     
     ics_attachment = MIMEBase('text', 'calendar', method='REQUEST', name='invite.ics')
