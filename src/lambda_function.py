@@ -57,11 +57,11 @@ def lambda_handler(event, context):
         elif http_method == 'POST':
             # Validate PayU signature for POST requests
             body = event.get('body', '')
-            # if not validate_payu_signature(headers, body):
-            #     return {
-            #         'statusCode': 403,
-            #         'body': 'Forbidden: Invalid PayU signature'
-            #     }
+            if not validate_payu_signature(headers, body):
+                return {
+                    'statusCode': 403,
+                    'body': 'Forbidden: Invalid PayU signature'
+                }
             return handle_post_request(event, calendar)
             
         else:
