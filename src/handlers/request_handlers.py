@@ -84,18 +84,18 @@ def handle_post_request(event, calendar):
 
     print(f'event_id: {event_id}, email: {email}, status: {status}')
     
-    if not event_id or not email:
-        print('Error: event_id and email are required in the request body')
-        return {
-            'statusCode': 400,
-            'body': 'event_id and email are required in the request body'
-        }
-    
     if status != 'COMPLETED':
         print('Error: Order status must be COMPLETED to invite to event')
         return {
             'statusCode': 400,
             'body': 'Order status must be COMPLETED to invite to event'
+        }
+
+    if not event_id or not email:
+        print('Error: event_id and email are required in the request body')
+        return {
+            'statusCode': 400,
+            'body': 'event_id and email are required in the request body'
         }
     
     # Find the event in the calendar (may be a specific recurring occurrence)
