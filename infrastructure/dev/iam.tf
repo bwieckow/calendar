@@ -47,7 +47,7 @@ resource "aws_iam_policy" "calendar" {
           "dynamodb:UpdateItem",
           "dynamodb:Query"
         ]
-        Resource = "arn:aws:dynamodb:*:${data.aws_caller_identity.current.account_id}:table/calendar_events"
+        Resource = "arn:aws:dynamodb:*:${data.aws_caller_identity.current.account_id}:table/calendar-events-dev"
       }
     ]
   })
