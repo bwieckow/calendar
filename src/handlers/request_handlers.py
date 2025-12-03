@@ -83,14 +83,17 @@ def handle_post_request(event, calendar):
     event_id = additional_description.split(event_id_prefix)[-1] if event_id_prefix in additional_description else None
 
     print(f'event_id: {event_id}, email: {email}, status: {status}')
-    
-    if status != 'COMPLETED':
-        print('Error: Order status must be COMPLETED to invite to event')
-        return {
-            'statusCode': 400,
-            'body': 'Order status must be COMPLETED to invite to event'
-        }
 
+    if status != 'COMPLETED':
+        print(f'Order status is {status}, not COMPLETED. Acknowledging webhook without sending invitation.')
+        return {
+            'statusCode': 200,
+            'body': json.dumps({
+                'message': f'Order status {status} acknowledged. Invitation will be sent when status is COMPLETED.',
+                'orderId': body.get('order', {}).get('orderId', '')
+            })
+    }
+    
     if not event_id or not email:
         print('Error: event_id and email are required in the request body')
         return {
