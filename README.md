@@ -2,7 +2,7 @@
 
 This project contains a Lambda function to interact with Google Calendar via iCalendar feeds. It supports two types of requests:
 - **GET**: Retrieve the nearest upcoming events for a given date by parsing an iCalendar feed.
-- **POST**: Send calendar invitation via email (AWS SES) to a specified email address when PayU order status is `COMPLETED`.
+- **POST**: Send calendar invitation via email (Brevo SMTP) to a specified email address when PayU order status is `COMPLETED`.
 
 > **📚 For Developers**: See [ARCHITECTURE.md](src/ARCHITECTURE.md) for detailed code structure and module documentation.
 
@@ -10,9 +10,9 @@ This project contains a Lambda function to interact with Google Calendar via iCa
 
 The solution uses:
 - **iCalendar Feed**: Reads events from Google Calendar's public/private iCalendar URL (no OAuth required)
-- **AWS SES**: Sends calendar invitations (.ics files) via email
+- **Brevo SMTP**: Sends calendar invitations (.ics files) via email (300 emails/day free)
 - **AWS Lambda**: Serverless function to handle API requests
-- **AWS SSM Parameter Store**: Stores sensitive configuration (API keys, calendar feed URL)
+- **AWS SSM Parameter Store**: Stores sensitive configuration (API keys, calendar feed URL, SMTP credentials)
 - **AWS DynamoDB**: Tracks events and participant counts
 
 ## Prerequisites
@@ -21,7 +21,7 @@ The solution uses:
 - AWS CLI configured with appropriate permissions
 - Terraform (for infrastructure deployment)
 - Google Calendar with iCalendar feed URL
-- Verified email address in AWS SES
+- Brevo account (free tier: 300 emails/day)
 
 ## Setup
 
@@ -44,10 +44,12 @@ The solution uses:
 
 4. **Configure AWS SSM Parameters**:
     Store the following parameters in AWS Systems Manager Parameter Store:
-    - `calendar-ical-feed-url`: Your Google Calendar iCalendar feed URL (private URL from calendar settings)
-    - `calendar-ses-from-email`: Verified sender email address for SES
+    - `/calendar/dev/ical-feed-url`: Your Google Calendar iCalendar feed URL (private URL from calendar settings)
+    - `/calendar/dev/smtp-from-email`: Sender email address for Brevo
+    - `/calendar/dev/smtp-username`: Brevo SMTP username (your Brevo login email)
+    - `/calendar/dev/smtp-password`: Brevo SMTP password (generate from Brevo account settings)
     - `/ops-master/cloudfront/apikey`: API key for request authentication
-    - `calendar-payu-second-key`: PayU second key for signature validation
+    - `/calendar/dev/payu-second-key`: PayU second key for signature validation
 
 5. **Get Your Google Calendar iCalendar URL**:
     - Open Google Calendar
@@ -55,10 +57,17 @@ The solution uses:
     - Copy the "Secret address in iCal format" URL
     - Store this URL in SSM Parameter Store as `calendar-ical-feed-url`
 
-6. **Verify Email in AWS SES**:
-    - Go to AWS SES Console
-    - Verify the email address you want to use as sender
-    - If in sandbox mode, also verify recipient email addresses for testing
+6. **Set up Brevo SMTP**:
+    - Sign up for a free Brevo account at https://www.brevo.com
+    - Go to Settings → SMTP & API → SMTP
+    - Generate an SMTP key (this will be your password)
+    - Add a verified sender email address
+    - Store credentials in SSM Parameter Store:
+      ```bash
+      aws ssm put-parameter --name "/calendar/dev/smtp-from-email" --value "your-email@example.com" --type SecureString
+      aws ssm put-parameter --name "/calendar/dev/smtp-username" --value "your-brevo-login@example.com" --type SecureString
+      aws ssm put-parameter --name "/calendar/dev/smtp-password" --value "your-smtp-key" --type SecureString
+      ```
 
 ## Running the Lambda Function Locally
 
@@ -155,10 +164,12 @@ additionalDescription: "event_id: abc123xyz"
 
 The Lambda function uses the following environment variables:
 
-- `ICAL_URL_PARAM` (default: `calendar-ical-feed-url`): SSM parameter name for iCalendar feed URL
-- `SES_FROM_EMAIL_PARAM` (default: `calendar-ses-from-email`): SSM parameter name for SES sender email
+- `ICAL_URL_PARAM` (default: `/calendar/dev/ical-feed-url`): SSM parameter name for iCalendar feed URL
+- `SMTP_FROM_EMAIL_PARAM` (default: `/calendar/dev/smtp-from-email`): SSM parameter name for sender email
+- `SMTP_USERNAME_PARAM` (default: `/calendar/dev/smtp-username`): SSM parameter name for Brevo SMTP username
+- `SMTP_PASSWORD_PARAM` (default: `/calendar/dev/smtp-password`): SSM parameter name for Brevo SMTP password
 - `API_KEY_PARAM` (default: `/ops-master/cloudfront/apikey`): SSM parameter name for API key
-- `SECOND_KEY_PARAM` (default: `calendar-payu-second-key`): SSM parameter name for PayU second key
+- `SECOND_KEY_PARAM` (default: `/calendar/dev/payu-second-key`): SSM parameter name for PayU second key
 
 ## Deployment
 
@@ -176,12 +187,12 @@ terraform apply
 - API requests are authenticated using `x-api-key` header
 - POST requests (PayU webhooks) are validated using MD5 signature
 - All sensitive data stored in AWS SSM Parameter Store with encryption
-- SES enforces TLS for email delivery
+- Brevo SMTP uses TLS for secure email delivery
 
 ## Limitations
 
-- AWS SES sandbox mode limits: can only send to verified email addresses
-- Request production access for SES to send to any email address
+- Brevo free tier: 300 emails per day (9,000/month)
+- Sender email must be verified in Brevo account
 - iCalendar feed has slight delay (typically a few minutes) for reflecting calendar changes
 - GET requests return maximum 3 nearest upcoming events within 90 days
 
@@ -192,10 +203,10 @@ terraform apply
 - Check that the event is within the 90-day range from the query date
 
 **Email not received**:
-- Verify sender email in AWS SES
-- Check SES sending limits and sandbox restrictions
-- Verify recipient email if in SES sandbox mode
-- Check CloudWatch logs for delivery errors
+- Verify sender email is configured in Brevo account
+- Check Brevo daily sending limits (300 emails/day on free tier)
+- Verify SMTP credentials in SSM Parameter Store
+- Check CloudWatch logs for SMTP connection errors
 
 **"Invalid API key" error**:
 - Ensure `x-api-key` header matches the value in SSM Parameter Store

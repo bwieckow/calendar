@@ -1,7 +1,7 @@
-"""Email service for sending calendar invitations via AWS SES."""
+"""Email service for sending calendar invitations via Brevo SMTP."""
 import os
 import datetime
-import boto3
+import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
@@ -74,7 +74,7 @@ def create_ics_invitation(event_summary, event_description, event_start, event_e
 def send_calendar_invitation(to_email, event_summary, event_description, 
                             event_start, event_end, event_location, event_uid, recurrence_date=None):
     """
-    Send calendar invitation via AWS SES with .ics attachment.
+    Send calendar invitation via Brevo SMTP with .ics attachment.
     
     Args:
         to_email (str): Recipient email address
@@ -87,15 +87,23 @@ def send_calendar_invitation(to_email, event_summary, event_description,
         recurrence_date: Date of specific occurrence (for recurring events)
         
     Returns:
-        dict: SES response
+        dict: Response with success status
         
     Raises:
         Exception: If email sending fails
     """
-    SES_FROM_EMAIL_PARAM = os.getenv('SES_FROM_EMAIL_PARAM', '/calendar/dev/ses-from-email')
-    from_email = get_ssm_parameter(SES_FROM_EMAIL_PARAM)
+    # Get SMTP credentials from SSM
+    SMTP_FROM_EMAIL_PARAM = os.getenv('SMTP_FROM_EMAIL_PARAM', '/calendar/dev/smtp-from-email')
+    SMTP_USERNAME_PARAM = os.getenv('SMTP_USERNAME_PARAM', '/calendar/dev/smtp-username')
+    SMTP_PASSWORD_PARAM = os.getenv('SMTP_PASSWORD_PARAM', '/calendar/dev/smtp-password')
     
-    ses_client = boto3.client('ses', region_name='eu-west-1')
+    from_email = get_ssm_parameter(SMTP_FROM_EMAIL_PARAM)
+    smtp_username = get_ssm_parameter(SMTP_USERNAME_PARAM)
+    smtp_password = get_ssm_parameter(SMTP_PASSWORD_PARAM)
+    
+    # Brevo SMTP settings
+    smtp_server = 'smtp-relay.brevo.com'
+    smtp_port = 587
     
     # Create the email message
     msg = MIMEMultipart('mixed')
@@ -132,15 +140,15 @@ This invitation has been added as a calendar attachment. Please accept or declin
     ics_attachment.add_header('Content-Disposition', 'attachment', filename='invite.ics')
     msg.attach(ics_attachment)
     
-    # Send email
+    # Send email via SMTP
     try:
-        response = ses_client.send_raw_email(
-            Source=from_email,
-            Destinations=[to_email],
-            RawMessage={'Data': msg.as_string()}
-        )
-        print(f'Email sent successfully. Message ID: {response["MessageId"]}')
-        return response
+        with smtplib.SMTP(smtp_server, smtp_port) as server:
+            server.starttls()
+            server.login(smtp_username, smtp_password)
+            server.send_message(msg)
+        
+        print(f'Email sent successfully to {to_email} via Brevo SMTP')
+        return {'success': True, 'message': 'Email sent via Brevo'}
     except Exception as e:
-        print(f'Error sending email: {str(e)}')
+        print(f'Error sending email via Brevo: {str(e)}')
         raise
