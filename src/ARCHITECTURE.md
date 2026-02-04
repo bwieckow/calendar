@@ -50,9 +50,9 @@ src/
 - `update_event_participants()`: Create/update event with participants
 
 ### `services/email_service.py`
-**Purpose:** Email operations via AWS SES
+**Purpose:** Email operations via Brevo SMTP
 - `create_ics_invitation()`: Generate .ics calendar file
-- `send_calendar_invitation()`: Send email with calendar attachment
+- `send_calendar_invitation()`: Send email with calendar attachment via SMTP
 
 ### `utils/aws_services.py`
 **Purpose:** AWS service utilities
@@ -118,12 +118,14 @@ Or use your existing deployment method (Terraform, SAM, etc.) ensuring the direc
 
 ## Environment Variables
 
-The function still uses the same environment variables:
+The function uses the following environment variables:
 - `ICAL_URL_PARAM` (default: `/calendar/dev/ical-feed-url`)
-- `SES_FROM_EMAIL_PARAM` (default: `/calendar/dev/ses-from-email`)
+- `SMTP_FROM_EMAIL_PARAM` (default: `/calendar/dev/smtp-from-email`)
+- `SMTP_USERNAME_PARAM` (default: `/calendar/dev/smtp-username`)
+- `SMTP_PASSWORD_PARAM` (default: `/calendar/dev/smtp-password`)
 - `API_KEY_PARAM` (default: `/ops-master/cloudfront/apikey`)
-- `SECOND_KEY_PARAM` (default: `calendar-payu-second-key`)
-- `DYNAMODB_TABLE_NAME` (default: `calendar-event-dev`)
+- `SECOND_KEY_PARAM` (default: `/calendar/dev/payu-second-key`)
+- `DYNAMODB_TABLE_NAME` (default: `calendar-events-dev`)
 
 ## Testing Individual Modules
 

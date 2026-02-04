@@ -1,6 +1,5 @@
 provider "aws" {
-  region  = "eu-west-1"
-  profile = "codebazar"
+  region = "eu-west-1"
 
   default_tags {
     tags = {
@@ -12,9 +11,8 @@ provider "aws" {
 }
 
 provider "aws" {
-  alias   = "virginia"
-  region  = "us-east-1"
-  profile = "codebazar"
+  alias  = "virginia"
+  region = "us-east-1"
 
   default_tags {
     tags = {
