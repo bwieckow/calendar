@@ -14,7 +14,15 @@ def get_dynamodb_table():
         boto3.Table: DynamoDB table resource
     """
     DYNAMODB_TABLE_NAME = os.getenv('DYNAMODB_TABLE_NAME', 'calendar-events-dev')
-    dynamodb = boto3.resource('dynamodb', region_name='eu-west-1')
+    
+    # Use AWS_PROFILE if set for local development
+    aws_profile = os.getenv('AWS_PROFILE')
+    if aws_profile:
+        session = boto3.Session(profile_name=aws_profile, region_name='eu-west-1')
+        dynamodb = session.resource('dynamodb')
+    else:
+        dynamodb = boto3.resource('dynamodb', region_name='eu-west-1')
+    
     return dynamodb.Table(DYNAMODB_TABLE_NAME)
 
 

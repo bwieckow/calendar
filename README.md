@@ -73,6 +73,18 @@ The solution uses:
 
 You can run the Lambda function directly from the command line using the existing JSON files for event data.
 
+### Using AWS Profile for Local Development
+
+If you have multiple AWS profiles configured in `~/.aws/credentials`, you can specify which profile to use:
+
+```bash
+# Set AWS profile for the current session
+export AWS_PROFILE=your-profile-name
+
+# Or inline with the command
+AWS_PROFILE=your-profile-name make get_test
+```
+
 ### GET Request
 
 Retrieve upcoming events for a specific date. Save the following JSON as `src/event_get.json`:
@@ -170,6 +182,7 @@ The Lambda function uses the following environment variables:
 - `SMTP_PASSWORD_PARAM` (default: `/calendar/dev/smtp-password`): SSM parameter name for Brevo SMTP password
 - `API_KEY_PARAM` (default: `/ops-master/cloudfront/apikey`): SSM parameter name for API key
 - `SECOND_KEY_PARAM` (default: `/calendar/dev/payu-second-key`): SSM parameter name for PayU second key
+- `AWS_PROFILE` (optional): AWS profile name for local development (e.g., `default`, `dev`, `prod`)
 
 ## Deployment
 

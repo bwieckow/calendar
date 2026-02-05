@@ -126,6 +126,17 @@ The function uses the following environment variables:
 - `API_KEY_PARAM` (default: `/ops-master/cloudfront/apikey`)
 - `SECOND_KEY_PARAM` (default: `/calendar/dev/payu-second-key`)
 - `DYNAMODB_TABLE_NAME` (default: `calendar-events-dev`)
+- `AWS_PROFILE` (optional): AWS profile name for local development
+
+### Local Development
+
+For local testing with specific AWS profiles:
+```bash
+export AWS_PROFILE=your-profile-name
+python -c 'import json; from src.lambda_function import lambda_handler; ...'
+```
+
+The `AWS_PROFILE` environment variable is automatically detected by the AWS SDK utilities in `utils/aws_services.py` and `services/dynamodb_service.py`.
 
 ## Testing Individual Modules
 
