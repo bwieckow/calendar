@@ -94,10 +94,12 @@ def send_calendar_invitation(to_email, event_summary, event_description,
     """
     # Get SMTP credentials from SSM
     SMTP_FROM_EMAIL_PARAM = os.getenv('SMTP_FROM_EMAIL_PARAM', '/calendar/dev/smtp-from-email')
+    SMTP_SENDER_NAME_PARAM = os.getenv('SMTP_SENDER_NAME_PARAM', '/calendar/dev/smtp-sender-name')
     SMTP_USERNAME_PARAM = os.getenv('SMTP_USERNAME_PARAM', '/calendar/dev/smtp-username')
     SMTP_PASSWORD_PARAM = os.getenv('SMTP_PASSWORD_PARAM', '/calendar/dev/smtp-password')
     
     from_email = get_ssm_parameter(SMTP_FROM_EMAIL_PARAM)
+    sender_name = "OpsMaster Trainings"
     smtp_username = get_ssm_parameter(SMTP_USERNAME_PARAM)
     smtp_password = get_ssm_parameter(SMTP_PASSWORD_PARAM)
     
@@ -108,7 +110,7 @@ def send_calendar_invitation(to_email, event_summary, event_description,
     # Create the email message
     msg = MIMEMultipart('mixed')
     msg['Subject'] = f'Calendar Invitation: {event_summary}'
-    msg['From'] = from_email
+    msg['From'] = f'{sender_name} <{from_email}>'
     msg['To'] = to_email
     
     # Email body
@@ -123,6 +125,8 @@ Description:
 {event_description}
 
 This invitation has been added as a calendar attachment. Please accept or decline using your calendar application.
+
+Please do not reply to this email. If you have any questions, contact the event organizer.
     """
     
     msg_body = MIMEText(body_text, 'plain', 'utf-8')
