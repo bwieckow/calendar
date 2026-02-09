@@ -11,10 +11,10 @@ data "aws_route53_zone" "opsmaster" {
   private_zone = false
 }
 
-# data "aws_ssm_parameter" "cloudfront_distribution_id" {
-#   name = "/ops-master/cloudfront/distribution_id"
-# }
+data "aws_ssm_parameter" "cloudfront_distribution_id" {
+  name = "/ops-master/cloudfront/dev/distribution_id"
+}
 
-# data "aws_cloudfront_distribution" "opsmaster" {
-#   id = data.aws_ssm_parameter.cloudfront_distribution_id.value
-# }
+data "aws_cloudfront_distribution" "opsmaster" {
+  id = data.aws_ssm_parameter.cloudfront_distribution_id.value
+}
