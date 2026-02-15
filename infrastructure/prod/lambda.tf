@@ -25,13 +25,12 @@ resource "aws_lambda_function" "calendar" {
   environment {
     variables = {
       ENVIRONMENT              = "prod"
-      GOOGLE_CREDENTIALS_PARAM = "/calendar/dev/google-credentials-json"
-      TOKEN_JSON_PARAM         = "/calendar/dev/token-json"
+      GOOGLE_CREDENTIALS_PARAM = "/calendar/prod/google-credentials-json"
 
       API_KEY_PARAM    = "/ops-master/cloudfront/prod/apikey"
-      SECOND_KEY_PARAM = "/calendar/dev/payu-second-key"
+      SECOND_KEY_PARAM = "/calendar/prod/payu-second-key"
 
-      ICAL_URL_PARAM      = "/calendar/dev/ical-feed-url"
+      ICAL_URL_PARAM      = "/calendar/prod/ical-feed-url"
       DYNAMODB_TABLE_NAME = aws_dynamodb_table.calendar_events.name
     }
   }
