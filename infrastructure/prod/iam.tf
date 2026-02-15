@@ -30,6 +30,16 @@ resource "aws_iam_policy" "calendar" {
           "arn:aws:ssm:*:${data.aws_caller_identity.current.account_id}:parameter/calendar/prod/*",
           "arn:aws:ssm:*:${data.aws_caller_identity.current.account_id}:parameter/ops-master/cloudfront/*"
         ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "dynamodb:PutItem",
+          "dynamodb:GetItem",
+          "dynamodb:UpdateItem",
+          "dynamodb:Query"
+        ]
+        Resource = "arn:aws:dynamodb:*:${data.aws_caller_identity.current.account_id}:table/calendar-events"
       }
     ]
   })

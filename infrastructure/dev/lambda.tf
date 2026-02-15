@@ -31,9 +31,8 @@ resource "aws_lambda_function" "calendar" {
       API_KEY_PARAM    = "/ops-master/cloudfront/dev/apikey"
       SECOND_KEY_PARAM = "/calendar/dev/payu-second-key"
 
-      ICAL_URL_PARAM       = "/calendar/dev/ical-feed-url"
-      SES_FROM_EMAIL_PARAM = "/calendar/dev/ses-from-email"
-      DYNAMODB_TABLE_NAME  = aws_dynamodb_table.calendar_events.name
+      ICAL_URL_PARAM      = "/calendar/dev/ical-feed-url"
+      DYNAMODB_TABLE_NAME = aws_dynamodb_table.calendar_events.name
     }
   }
 }
