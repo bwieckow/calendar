@@ -26,7 +26,6 @@ resource "aws_lambda_function" "calendar" {
     variables = {
       ENVIRONMENT              = "dev"
       GOOGLE_CREDENTIALS_PARAM = "/calendar/dev/google-credentials-json"
-      TOKEN_JSON_PARAM         = "/calendar/dev/token-json"
 
       API_KEY_PARAM    = "/ops-master/cloudfront/dev/apikey"
       SECOND_KEY_PARAM = "/calendar/dev/payu-second-key"
