@@ -31,9 +31,8 @@ resource "aws_lambda_function" "calendar" {
       API_KEY_PARAM    = "/ops-master/cloudfront/dev/apikey"
       SECOND_KEY_PARAM = "/calendar/dev/payu-second-key"
 
-      ICAL_URL_PARAM       = "/calendar/dev/ical-feed-url"
-      SES_FROM_EMAIL_PARAM = "/calendar/dev/ses-from-email"
-      DYNAMODB_TABLE_NAME  = aws_dynamodb_table.calendar_events.name
+      ICAL_URL_PARAM      = "/calendar/dev/ical-feed-url"
+      DYNAMODB_TABLE_NAME = aws_dynamodb_table.calendar_events.name
     }
   }
 }
@@ -44,7 +43,7 @@ resource "aws_lambda_function_url" "calendar" {
   function_name      = aws_lambda_function.calendar.function_name
   authorization_type = "AWS_IAM"
   cors {
-    allow_origins = ["http://localhost:3000", "http://opsmaster.s3-website-eu-west-1.amazonaws.com", "https://ops-master.com", "https://www.ops-master.com"]
+    allow_origins = ["http://localhost:3000", "http://opsmaster-dev.s3-website-eu-west-1.amazonaws.com", "https://dev.ops-master.com"]
     allow_methods = ["GET", "POST"]
     allow_headers = ["*"]
   }
