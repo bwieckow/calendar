@@ -32,6 +32,11 @@ resource "aws_lambda_function" "calendar" {
 
       ICAL_URL_PARAM      = "/calendar/prod/ical-feed-url"
       DYNAMODB_TABLE_NAME = aws_dynamodb_table.calendar_events.name
+
+      SMTP_FROM_EMAIL_PARAM  = "/calendar/prod/smtp-from-email"
+      SMTP_SENDER_NAME_PARAM = "/calendar/prod/smtp-sender-name"
+      SMTP_USERNAME_PARAM    = "/calendar/prod/smtp-username"
+      SMTP_PASSWORD_PARAM    = "/calendar/prod/smtp-password"
     }
   }
 }
